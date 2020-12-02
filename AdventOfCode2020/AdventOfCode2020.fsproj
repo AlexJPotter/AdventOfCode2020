@@ -6,7 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="FileHelpers.fs" />
+    <Compile Include="Day01\Day01.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Day01\input.txt" />
   </ItemGroup>
 
 </Project>
