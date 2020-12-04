@@ -2,74 +2,63 @@
 
 open FileHelpers
 
-exception FailedToGetSolutionError of string
+let testInput = seq { 299; 366; 675; 979; 1456; 1721 }
+
+let getInput () =
+    readLinesFromFile "Day01/input.txt" |> Seq.map int |> Seq.sort
+
+let withoutFirstElement<'T> (sequence: seq<'T>) =
+    let lengthOfSequence = sequence |> Seq.length
+    sequence |> Seq.skip 1 |> Seq.take (lengthOfSequence - 1)
+
+let withoutLastElement<'T> (sequence: seq<'T>) =
+    let lengthOfSequence = sequence |> Seq.length
+    sequence |> Seq.take (lengthOfSequence - 1)
+
+let areOfEqualLength<'T> (sequenceA: seq<'T>, sequenceB: seq<'T>) =
+    Seq.length (sequenceA) = Seq.length (sequenceB)
+
+type FindSolutionResult = { success: bool; solution: int }
+
+let rec findSolution (targetValue: int, sequence: seq<int>) =
+    let firstElement = sequence |> Seq.head
+    let lastElement = sequence |> Seq.last
+
+    let sum = firstElement + lastElement
+    let differenceFromTarget = targetValue - sum
+
+    let reducedSequence =
+        match differenceFromTarget with
+        | diff when diff < 0 -> sequence |> withoutLastElement
+        | diff when diff > 0 -> sequence |> withoutFirstElement
+        | _ -> sequence
+
+    if areOfEqualLength (sequence, reducedSequence) then
+        { success = true; solution = (firstElement * lastElement) }
+    elif Seq.length (reducedSequence) = 1 then
+        { success = false; solution = 0 }
+    else
+        findSolution (targetValue, reducedSequence)
 
 let partOne () =
-    let input = readLinesFromFile "Day01/input.txt"
-    let numericInput = [ for i in input -> int i ]
-    let sortedNumericInput = numericInput |> List.sort
-
-    let mutable lowerIndex = 0
-    let mutable upperIndex = (sortedNumericInput |> Seq.length) - 1
-
-    let target = 2020
-
-    let mutable foundSolution = false
-    let mutable solution = 0
-
-    while not foundSolution do
-        let lowerValue = sortedNumericInput.Item(lowerIndex)
-        let upperValue = sortedNumericInput.Item(upperIndex)
-        let sum = lowerValue + upperValue
-
-        if sum = target then
-            foundSolution <- true
-            solution <- (lowerValue * upperValue)
-        
-        elif sum < target
-            then lowerIndex <- lowerIndex + 1
-
-        elif sum > target
-            then upperIndex <- upperIndex - 1
-
-    solution
+    let input = getInput()
+    (findSolution (2020, input)).solution
 
 let partTwo () =
-    let input = readLinesFromFile "Day01/input.txt"
-    let numericInput = [ for i in input -> int i ]
-    let sortedNumericInput = numericInput |> List.sort
+    let input = getInput()
 
-    let mutable lowerIndex = 0
-    let mutable middleIndex = 1
-    let mutable upperIndex = (sortedNumericInput |> Seq.length) - 1
+    let rec findSolution2 sequence =
+        let firstElement = sequence |> Seq.head
+        let restOfSequence = sequence |> withoutFirstElement
 
-    let target = 2020
+        let target = 2020 - firstElement
 
-    let mutable foundSolution = false
-    let mutable solution = 0
+        let solutionResult = findSolution (target, restOfSequence)
 
-    while not foundSolution do
-        let lowerValue = sortedNumericInput.Item(lowerIndex)
-        let innerTarget = target - lowerValue
+        if solutionResult.success then
+            { success = true; solution = firstElement * solutionResult.solution }
+        elif Seq.length restOfSequence = 2 then
+            { success = false; solution = 0 }
+        else restOfSequence |> findSolution2
 
-        middleIndex <- lowerIndex + 1
-        upperIndex <- (sortedNumericInput |> Seq.length) - 1
-
-        while (not foundSolution) && (middleIndex <> upperIndex) do
-            let middleValue = sortedNumericInput.Item(middleIndex)
-            let upperValue = sortedNumericInput.Item(upperIndex)
-            let innerSum = middleValue + upperValue
-
-            if innerSum = innerTarget then
-                solution <- lowerValue * middleValue * upperValue
-                foundSolution <- true
-
-            elif innerSum < innerTarget then
-                middleIndex <- middleIndex + 1
-
-            elif innerSum > innerTarget then
-                upperIndex <- upperIndex - 1
-
-        lowerIndex <- lowerIndex + 1
-
-    solution
+    (input |> Seq.sort |> findSolution2).solution
