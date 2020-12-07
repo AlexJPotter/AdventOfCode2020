@@ -1,4 +1,4 @@
-﻿open Day06
+﻿open Day07
 
 [<EntryPoint>]
 let main argv =
