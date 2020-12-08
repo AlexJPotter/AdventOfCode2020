@@ -1,7 +1,6 @@
-﻿open Day07
+﻿open Day08
 
 [<EntryPoint>]
 let main argv =
-    let solution = partTwo()
-    printfn "%d" solution
+    partTwo()
     0
