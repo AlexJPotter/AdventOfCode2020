@@ -1,7 +1,7 @@
-﻿open Day17_2
+﻿open Day18
 
 [<EntryPoint>]
 let main argv =
-    let solution = solution()
+    let solution = partTwo()
     printfn "%s" (solution.ToString())
     0
