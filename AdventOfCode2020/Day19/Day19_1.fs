@@ -1,4 +1,4 @@
-﻿module Day19
+﻿module Day19_1
 
 open FileHelpers
 
@@ -77,7 +77,7 @@ let rec checkRule (rule: Rule) (message: string) : CheckRuleResult =
 
     result
 
-let partOne () =
+let solution () =
     messages
     |> Array.map (fun message -> (checkRule ruleZero message))
     |> Array.filter (fun result -> result.Success && result.Remaining = "")
