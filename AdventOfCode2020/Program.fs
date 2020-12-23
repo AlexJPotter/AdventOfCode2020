@@ -2,6 +2,6 @@
 
 [<EntryPoint>]
 let main argv =
-    let answer = partOne()
+    let answer = partTwo()
     printfn "%s" (answer.ToString())
     0

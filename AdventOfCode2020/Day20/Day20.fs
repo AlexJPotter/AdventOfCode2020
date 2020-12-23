@@ -27,7 +27,7 @@ let tiles = input |> Array.map parseTile
 
 let printTileImage (tileImage: TileImage) =
     let printRow (row: char[]) =
-        String.Join(" ", row)
+        String.Join("", row)
 
     let rows = tileImage |> Array.map printRow
     String.Join("\n", rows)
@@ -185,7 +185,6 @@ let rec connectTiles (state: State) : State =
         let firstSuccess = connectResults |> Array.find (fun result -> result.Success)
         let rest = state.RemainingTiles |> Array.filter (fun tile -> tile.Id <> firstSuccess.PlacedTile.Tile.Id)
         let newState = { PlacedTiles = Array.append state.PlacedTiles [| firstSuccess.PlacedTile |]; RemainingTiles = rest }
-        printfn $"Connected {firstSuccess.PlacedTile.Tile.Id} ({newState.RemainingTiles.Length} remaining)"
         connectTiles newState
 
 let partOne () =
@@ -210,3 +209,76 @@ let partOne () =
     let result = corners |> Array.fold (fun current next -> current * next.Tile.Id) (1L)
 
     result
+
+let removeEdges (tileImage: TileImage) : TileImage =
+    tileImage
+    |> Array.skip 1
+    |> Array.take (tileImage.Length - 2)
+    |> Array.map (fun row -> row |> Array.skip 1 |> Array.take (row.Length - 2))
+
+let getFinalImage (placedTiles: PlacedTile[]) : TileImage =
+    let printRow (y: int) : char[][] =
+        let imagesOnRow =
+            placedTiles
+            |> Array.filter (fun pt -> pt.Coordinate.Y = y)
+            |> Array.sortBy (fun pt -> pt.Coordinate.X)
+            |> Array.map (fun pt -> pt.Tile.Image |> removeEdges)
+
+        let sizeOfImage = imagesOnRow |> Array.head |> Array.length
+
+        [| 0..(sizeOfImage - 1) |]
+        |> Array.map (fun i -> imagesOnRow |> Array.collect (fun image -> image.[i]))
+
+    let yCoordinates = placedTiles |> Array.map (fun pt -> pt.Coordinate.Y) |> Array.sort
+
+    [| (yCoordinates |> Array.min)..(yCoordinates |> Array.max)|]
+    |> Array.rev
+    |> Array.collect printRow
+
+let partTwo () =
+    let initialState = { PlacedTiles = Array.empty; RemainingTiles = tiles }
+    let finalState = connectTiles initialState
+    let finalImage = finalState.PlacedTiles |> getFinalImage
+
+    let lengthOfLine = finalImage |> Array.head |> Array.length
+
+    let monsterLength = 20
+    let interval = lengthOfLine - monsterLength
+
+    let flatMonster = (
+        "                  # " + new String(' ', interval) +
+        "#    ##    ##    ###" + new String(' ', interval) +
+        " #  #  #  #  #  #   ").ToCharArray()
+
+    let monsterBodyIndices = 
+        flatMonster
+        |> Array.mapi (fun i c -> (i, c))
+        |> Array.filter (fun (_, c) -> c = '#')
+        |> Array.map (fun (i, _) -> i)
+
+    let containsSeaMonster (characters: char[]) =
+        [| 0..(flatMonster.Length - 1) |]
+        |> Array.forall (fun index -> flatMonster.[index] = ' ' || flatMonster.[index] = characters.[index])
+
+    let isPartOfSeaMonster (image: char[]) (index: int) =
+        let toCheck =
+            monsterBodyIndices
+            |> Array.filter (fun i -> (index - i) >= 0 && ((index - i) + (flatMonster.Length - 1)) < image.Length)
+            |> Array.map (fun i -> [| (index - i)..((index - i) + (flatMonster.Length - 1)) |])
+            |> Array.map (fun indices -> indices |> Array.map (fun i -> image.[i]))
+
+        toCheck |> Array.exists containsSeaMonster
+
+    let containsSeaMonster (image: char[]) =
+        [| 0..(image.Length - 1) |] |> Array.exists (fun index -> isPartOfSeaMonster (image) (index))
+
+    let possibleImages = finalImage |> getPermutations
+
+    let flatImages = possibleImages |> Array.map (fun image -> image |> Array.collect id)
+
+    let flatImage = flatImages |> Array.find containsSeaMonster
+
+    flatImage
+    |> Array.mapi (fun i c -> (i, c))
+    |> Array.filter (fun (i, c) -> c = '#' && not (isPartOfSeaMonster (flatImage) (i)))
+    |> Array.length
